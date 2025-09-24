@@ -13,18 +13,18 @@
 // @connect      api.github.com
 // @updateURL    https://raw.githubusercontent.com/kidhacker45/tempermonkeybing/refs/heads/main/auto-see.js
 // @downloadURL  https://raw.githubusercontent.com/kidhacker45/tempermonkeybing/refs/heads/main/auto-see.js
-
+// ==/UserScript==
 (function() {
     'use strict';
 
     // Configuration
     const CONFIG = {
         GITHUB_WORD_LIST_URL: 'https://raw.githubusercontent.com/kidhacker45/tempermonkeybing/refs/heads/main/words.json', // Update with your actual URL
-        MIN_SEARCH_DELAY: 5000,  // 5 seconds
-        MAX_SEARCH_DELAY: 10000, // 10 seconds
-        MIN_TYPING_DELAY: 80,    // 80ms
-        MAX_TYPING_DELAY: 100,   // 100ms
-        RETRY_DELAY: 1000,       // 1 second retry delay
+        MIN_SEARCH_DELAY: 5000,// 5 seconds
+        MAX_SEARCH_DELAY: 10000,// 10 seconds
+        MIN_TYPING_DELAY: 80,// 80ms
+        MAX_TYPING_DELAY: 100,// 100ms
+        RETRY_DELAY: 2000,// 1 second retry delay
         DEFAULT_WORDS: [
             'apple', 'banana', 'computer', 'database', 'elephant',
             'forest', 'guitar', 'horizon', 'island', 'journey',
@@ -106,12 +106,12 @@
         const statusEl = document.getElementById('search-status');
         const buttonEl = document.getElementById('toggle-search');
         const lastWordEl = document.getElementById('last-word');
-        
+
         if (statusEl) {
             statusEl.textContent = `Status: ${isRunning ? 'Running' : 'Stopped'}`;
             statusEl.style.color = isRunning ? '#4CAF50' : '#f44336';
         }
-        
+
         if (buttonEl) {
             buttonEl.textContent = isRunning ? 'Stop Searching' : 'Start Searching';
             buttonEl.style.background = isRunning ? '#f44336' : '#4CAF50';
@@ -144,7 +144,7 @@
                                 // Try to extract arrays from object
                                 words = Object.values(data).flat().filter(w => typeof w === 'string');
                             }
-                            
+
                             if (words.length > 0) {
                                 wordList = words;
                                 console.log(`Loaded ${words.length} words from GitHub`);
@@ -188,14 +188,14 @@
     function getRandomWord() {
         const lastWord = GM_getValue('lastSearchWord', '');
         let availableWords = wordList.filter(w => w !== lastWord);
-        
+
         if (availableWords.length === 0) {
             availableWords = wordList;
         }
-        
+
         const randomIndex = Math.floor(Math.random() * availableWords.length);
         const selectedWord = availableWords[randomIndex];
-        
+
         GM_setValue('lastSearchWord', selectedWord);
         return selectedWord;
     }
@@ -210,24 +210,24 @@
             'input[type="search"]',
             'input.b_searchbox'
         ];
-        
+
         let searchBox = null;
         for (const selector of searchBoxSelectors) {
             searchBox = document.querySelector(selector);
             if (searchBox) break;
         }
-        
+
         if (!searchBox) return null;
-        
+
         // Find the form
         let searchForm = searchBox.closest('form');
         if (!searchForm) {
             // Try to find form by ID or class
-            searchForm = document.querySelector('#sb_form') || 
+            searchForm = document.querySelector('#sb_form') ||
                         document.querySelector('form.b_searchbox') ||
                         document.querySelector('form[action*="search"]');
         }
-        
+
         return { searchBox, searchForm };
     }
 
@@ -236,21 +236,21 @@
         // Clear existing text
         element.value = '';
         element.focus();
-        
+
         // Trigger input event for clearing
         element.dispatchEvent(new Event('input', { bubbles: true }));
-        
+
         // Type each character
         for (let i = 0; i < text.length; i++) {
             if (!isRunning) break;
-            
+
             element.value += text[i];
-            
+
             // Trigger events
             element.dispatchEvent(new Event('input', { bubbles: true }));
             element.dispatchEvent(new KeyboardEvent('keydown', { key: text[i], bubbles: true }));
             element.dispatchEvent(new KeyboardEvent('keyup', { key: text[i], bubbles: true }));
-            
+
             // Random delay between keystrokes
             const delay = CONFIG.MIN_TYPING_DELAY + Math.random() * (CONFIG.MAX_TYPING_DELAY - CONFIG.MIN_TYPING_DELAY);
             await sleep(delay);
@@ -262,7 +262,7 @@
         if (searchForm) {
             // Try multiple submission methods
             const submitButton = searchForm.querySelector('input[type="submit"], button[type="submit"], #sb_form_go');
-            
+
             if (submitButton) {
                 submitButton.click();
             } else {
@@ -279,9 +279,9 @@
     // Perform a single search
     async function performSearch() {
         if (!isRunning) return;
-        
+
         const elements = findSearchElements();
-        
+
         if (!elements || !elements.searchBox) {
             console.log('Search elements not found, retrying...');
             await sleep(CONFIG.RETRY_DELAY);
@@ -290,21 +290,21 @@
             }
             return;
         }
-        
+
         const { searchBox, searchForm } = elements;
         const word = getRandomWord();
-        
+
         console.log(`Searching for: ${word}`);
         updateUI();
-        
+
         // Simulate typing
         await simulateTyping(searchBox, word);
-        
+
         if (!isRunning) return;
-        
+
         // Submit the search
         submitSearch(searchForm, searchBox);
-        
+
         // Schedule next search
         if (isRunning) {
             const delay = CONFIG.MIN_SEARCH_DELAY + Math.random() * (CONFIG.MAX_SEARCH_DELAY - CONFIG.MIN_SEARCH_DELAY);
@@ -330,7 +330,7 @@
     async function startSearching() {
         isRunning = true;
         updateUI();
-        
+
         // Fetch words from GitHub on first start
         if (wordList.length === CONFIG.DEFAULT_WORDS.length) {
             const statusEl = document.getElementById('search-status');
@@ -339,7 +339,7 @@
             }
             await fetchWordsFromGitHub();
         }
-        
+
         console.log('Starting automated searches...');
         performSearch();
     }
@@ -363,14 +363,14 @@
     // Initialize
     function init() {
         console.log('Bing Auto Search Bot initialized');
-        
+
         // Wait for page to load
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', createUI);
         } else {
             createUI();
         }
-        
+
         // Load words on init (but don't block)
         fetchWordsFromGitHub().then(() => {
             console.log('Initial word list loaded');
